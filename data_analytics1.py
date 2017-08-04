@@ -4,6 +4,8 @@ import os, sys
 import pandas as pd
 import numpy as np
 from sklearn import model_selection
+import matplotlib.pyplot as plt
+from pandas.tools.plotting import scatter_matrix
 
 class data_analytics(object):
 
@@ -80,6 +82,15 @@ class data_analytics(object):
                                                                                                                                     test_size=(1 - self.splitFactor), random_state=seed)
         return self.inputDataTrain_X, self.inputDataTest_X, self.inputDataTrain_Y, self.inputDataTest_Y
 
+    def plot_data(self):
+        """
+
+        :return:
+        """
+        scatter_matrix(self.inputData)
+        #plt.plot(self.inputData[0], self.inputData[-1])
+        plt.show()
+
 if __name__ == '__main__':
 
     if len(sys.argv) == 3:
@@ -96,3 +107,4 @@ if __name__ == '__main__':
     print("InputData after splitting : \n",DA.inputDataTrain_Y.shape)
     print("InputData after splitting : \n",DA.inputDataTest_X.shape)
     print("InputData after splitting : \n",DA.inputDataTest_Y.shape)
+    DA.plot_data()
