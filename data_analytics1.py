@@ -87,7 +87,8 @@ class data_analytics(object):
 
         :return:
         """
-        scatter_matrix(self.inputData)
+        #plt.scatter(self.inputData[0], self.inputData[-1])
+        self.inputData.plot(x='TopLoad', y=["Prim_Length", "Prim_Flap", "Sec_Flap"], kind="points")
         #plt.plot(self.inputData[0], self.inputData[-1])
         plt.show()
 
