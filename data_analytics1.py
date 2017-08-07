@@ -3,7 +3,7 @@ __author__ = 'Umesh'
 import os, sys
 import pandas as pd
 import numpy as np
-from sklearn import model_selection
+from sklearn import model_selection, linear_model
 import matplotlib.pyplot as plt
 from pandas.tools.plotting import scatter_matrix
 
@@ -11,12 +11,14 @@ class data_analytics(object):
 
     models = []
 
-    def __init__(self, inputFile, sFactor=1.0):
+    def __init__(self, inputFile, sFactor=0.0):
         """
             initializes the data
         :return:
         """
         self.inputFile = inputFile
+        self.parentPath = os.path.split(self.inputFile)[0]
+        self.figuresPath = os.path.join(self.parentPath, "Figures")
         self.read_csv()
         self.cleanData()
         self.inputData.head()
@@ -55,12 +57,148 @@ class data_analytics(object):
         """
         self.inputData = pd.read_csv(self.inputFile, na_values = [])
 
-    def regression_model(self, dependentVariable):
+    def plot_model(self, X, Y, label_, color_="black"):
         """
-            method used for creating regression model with considering the input data
-            :param dependentVariable : it is variable which we have to predict
+
         :return:
         """
+
+        self.ax.scatter(X, Y, label=label_, color=color_)
+        #ax.plot([Y.min(), Y.max()], [Y.min(), Y.max()], 'k--', lw=4)
+        self.ax.set_xlabel('Measured')
+        self.ax.set_ylabel('Predicted')
+
+    def lr_model1(self):
+        """
+
+        :return:
+        """
+
+        lm = linear_model.LinearRegression()
+        model = lm.fit(self.inputDataTrain_X, self.inputDataTrain_Y)
+        # print("intercept for train model : ", lm.intercept_)
+        # print("coefficients for train model : ")
+        # for i in range(lm.coef_.shape[0]):
+        #     for j in range(lm.coef_.shape[1]):
+        #         print(float(lm.coef_[i][j]))
+
+        fig, self.ax = plt.subplots()
+
+        predictionsTrain_model1 = lm.predict(self.inputDataTrain_X)
+        print(predictionsTrain_model1.shape, self.inputDataTrain_Y.shape)
+
+        print("Coefficient of determination train: ", lm.score(self.inputDataTrain_X, self.inputDataTrain_Y))
+        print("Coefficient of determination test: ", lm.score(self.inputDataTest_X, self.inputDataTest_Y))
+        self.plot_model(self.inputDataTrain_Y, predictionsTrain_model1, "trainData", color_="blue")
+
+        predictionsTest_model1 = lm.predict(self.inputDataTest_X)
+        print(predictionsTest_model1.shape, self.inputDataTest_Y.shape)
+        self.plot_model(self.inputDataTest_Y, predictionsTest_model1, "testData", color_="red")
+        lr_model1_path = os.path.join(self.figuresPath, "LR_Train_Test_model1.pdf")
+        plt.legend(loc="upper left")
+        plt.savefig(lr_model1_path)
+        plt.show()
+        plt.close()
+
+    def lr_model2(self):
+        """
+
+        :return:
+        """
+
+        #predictions_cv = model_selection.cross_val_predict(lm, X, Y, cv = 10)
+        lm = linear_model.LinearRegression()
+        predictionsTrain_model2 = model_selection.cross_val_predict(lm, self.inputDataTrain_X, self.inputDataTrain_Y, cv = 10)
+
+        #print("Coefficient of determination train: ", lm.score(self.inputDataTrain_X, self.inputDataTrain_Y))
+        #print("Coefficient of determination test: ", lm.score(self.inputDataTest_X, self.inputDataTest_Y))
+        fig, self.ax = plt.subplots()
+
+        #predictionsTrain_model2 = lm.predict(self.inputDataTrain_X)
+        self.plot_model(self.inputDataTrain_Y, predictionsTrain_model2, "trainData")
+
+        # predictionsTest_model2 = lm.predict(self.inputDataTest_X)
+        # self.plot_model(self.inputDataTest_Y, predictionsTest_model2)
+        lr_model2_path = os.path.join(self.figuresPath, "LR_Train_Test_model2.pdf")
+        plt.legend(loc="upper left")
+        plt.savefig(lr_model2_path)
+        plt.show()
+        plt.close()
+
+    def lr_model3(self):
+        """
+
+        :return:
+        """
+
+        from sklearn.isotonic import IsotonicRegression
+
+        #predictions_cv = model_selection.cross_val_predict(lm, X, Y, cv = 10)
+        ir = IsotonicRegression()
+        predictionsTrain_model3 = ir.fit_transform(self.inputDataTrain_X, self.inputDataTrain_Y)
+
+        fig, self.ax = plt.subplots()
+
+        #predictionsTrain_model2 = lm.predict(self.inputDataTrain_X)
+        self.plot_model(self.inputDataTrain_Y, predictionsTrain_model3, "trainData")
+
+        # predictionsTest_model2 = lm.predict(self.inputDataTest_X)
+        # self.plot_model(self.inputDataTest_Y, predictionsTest_model2)
+        lr_model3_path = os.path.join(self.figuresPath, "LR_Train_Test_model3.pdf")
+        plt.legend(loc="upper left")
+        plt.savefig(lr_model3_path)
+        plt.show()
+        plt.close()
+
+    def decision_tree_model1(self, maxDepth=None):
+        """
+
+        :return:
+        """
+
+        from sklearn.tree import DecisionTreeRegressor
+
+        #predictions_cv = model_selection.cross_val_predict(lm, X, Y, cv = 10)
+        decisionTreeRegr = DecisionTreeRegressor(max_depth=maxDepth)
+        model4 = decisionTreeRegr.fit(self.inputDataTrain_X, self.inputDataTrain_Y)
+        fig, self.ax = plt.subplots()
+
+        print("Coefficient of determination train: ", decisionTreeRegr.score(self.inputDataTrain_X, self.inputDataTrain_Y))
+        print("Coefficient of determination test: ", decisionTreeRegr.score(self.inputDataTest_X, self.inputDataTest_Y))
+        predictionsTrain_model4 = decisionTreeRegr.predict(self.inputDataTrain_X)
+        self.plot_model(self.inputDataTrain_Y, predictionsTrain_model4, "trainData", color_="blue")
+
+        predictionsTest_model4 = decisionTreeRegr.predict(self.inputDataTest_X)
+        self.plot_model(self.inputDataTest_Y, predictionsTest_model4, "trainData", color_="red")
+        lr_model3_path = os.path.join(self.figuresPath, "DecisionTree_Train_Test_%s.pdf"%str(maxDepth))
+        if os.path.exists(lr_model3_path):
+            lr_model3_path = os.path.join(self.figuresPath, "DecisionTree_Train_Test_depth_%s.pdf"%str(maxDepth))
+
+        plt.legend(loc="upper left")
+        plt.savefig(lr_model3_path)
+        plt.show()
+        plt.close()
+
+    def linear_regression_model(self):
+        """
+            method used for creating regression model with considering the input data
+        :return:
+        """
+
+        # Linear Regression model
+        self.lr_model1()
+
+        # Cross Validation Model
+        self.lr_model2()
+
+        # Isotonic Regression Model
+        #self.lr_model3()
+
+        # decision tree model
+        self.decision_tree_model1(maxDepth=4)
+
+        self.decision_tree_model1()
+        #self.decision_tree_model1()
 
     def split_data(self):
         """
@@ -69,13 +207,18 @@ class data_analytics(object):
         """
         #self.inputData_training = self.inputData.take(np.random.permutation(len(self.inputData))[:self.splitFactor])
         # Split-out validation dataset
-        self.inputDataArray = self.inputData.values
-        self.independent = self.inputDataArray[:, 0:(self.nCols-1)]
+        # self.inputDataArray = self.inputData.values
+        # self.independent = self.inputDataArray[:, 0:(self.nCols-1)]
+        self.colNames = self.inputData.columns.tolist()
+        self.feature_names = self.colNames[1:self.nCols-1]
+        self.target_name = [self.colNames[self.nCols-1]]
+        self.independent = pd.DataFrame(self.inputData, columns=self.feature_names)
         print("Independent dataset : \n")
-        print(self.independent[0,:])
+        print(self.independent.head())
         print("dependent dataset : \n")
-        self.dependent = self.inputDataArray[:, (self.nCols-1)]
-        print(self.dependent[0:5])
+        #self.dependent = self.inputDataArray[:, (self.nCols-1)]
+        self.dependent = pd.DataFrame(self.inputData, columns=self.target_name)
+        print(self.dependent.head())
         validation_size = 0.20
         seed = 7
         self.inputDataTrain_X, self.inputDataTest_X, self.inputDataTrain_Y, self.inputDataTest_Y = model_selection.train_test_split(self.independent, self.dependent,
@@ -87,9 +230,9 @@ class data_analytics(object):
 
         :return:
         """
-        #plt.scatter(self.inputData[0], self.inputData[-1])
-        self.inputData.plot(x='TopLoad', y=["Prim_Length", "Prim_Flap", "Sec_Flap"], kind="points")
-        #plt.plot(self.inputData[0], self.inputData[-1])
+        for colnames, col in self.inputData.iteritems():
+            print(colnames)#, self.inputData[colnames])
+            self.inputData.plot(x=colnames, y="TopLoad", kind="scatter")
         plt.show()
 
 if __name__ == '__main__':
@@ -103,9 +246,10 @@ if __name__ == '__main__':
         exit()
 
     DA = data_analytics(inputCSV, sFactor=splitFact)
-    print("InputData after cleaning : \n",DA.inputData.shape)
-    print("InputData after splitting : \n",DA.inputDataTrain_X.shape)
-    print("InputData after splitting : \n",DA.inputDataTrain_Y.shape)
-    print("InputData after splitting : \n",DA.inputDataTest_X.shape)
-    print("InputData after splitting : \n",DA.inputDataTest_Y.shape)
-    DA.plot_data()
+    # print("InputData after cleaning : \n",DA.inputData.shape)
+    # print("InputData after splitting : \n",DA.inputDataTrain_X.shape)
+    # print("InputData after splitting : \n",DA.inputDataTrain_Y.shape)
+    # print("InputData after splitting : \n",DA.inputDataTest_X.shape)
+    # print("InputData after splitting : \n",DA.inputDataTest_Y.shape)
+    # DA.plot_data()
+    DA.linear_regression_model()
