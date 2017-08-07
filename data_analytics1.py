@@ -88,12 +88,14 @@ class data_analytics(object):
         print(predictionsTrain_model1.shape, self.inputDataTrain_Y.shape)
 
         print("Coefficient of determination train: ", lm.score(self.inputDataTrain_X, self.inputDataTrain_Y))
-        print("Coefficient of determination test: ", lm.score(self.inputDataTest_X, self.inputDataTest_Y))
         self.plot_model(self.inputDataTrain_Y, predictionsTrain_model1, "trainData", color_="blue")
 
-        predictionsTest_model1 = lm.predict(self.inputDataTest_X)
-        print(predictionsTest_model1.shape, self.inputDataTest_Y.shape)
-        self.plot_model(self.inputDataTest_Y, predictionsTest_model1, "testData", color_="red")
+        if self.splitFactor < 1.0:
+            print("Coefficient of determination test: ", lm.score(self.inputDataTest_X, self.inputDataTest_Y))
+            predictionsTest_model1 = lm.predict(self.inputDataTest_X)
+            print(predictionsTest_model1.shape, self.inputDataTest_Y.shape)
+            self.plot_model(self.inputDataTest_Y, predictionsTest_model1, "testData", color_="red")
+
         lr_model1_path = os.path.join(self.figuresPath, "LR_Train_Test_model1.pdf")
         plt.legend(loc="upper left")
         plt.savefig(lr_model1_path)
@@ -164,15 +166,61 @@ class data_analytics(object):
         fig, self.ax = plt.subplots()
 
         print("Coefficient of determination train: ", decisionTreeRegr.score(self.inputDataTrain_X, self.inputDataTrain_Y))
-        print("Coefficient of determination test: ", decisionTreeRegr.score(self.inputDataTest_X, self.inputDataTest_Y))
         predictionsTrain_model4 = decisionTreeRegr.predict(self.inputDataTrain_X)
         self.plot_model(self.inputDataTrain_Y, predictionsTrain_model4, "trainData", color_="blue")
 
-        predictionsTest_model4 = decisionTreeRegr.predict(self.inputDataTest_X)
-        self.plot_model(self.inputDataTest_Y, predictionsTest_model4, "trainData", color_="red")
+        if self.splitFactor < 1.0:
+            print("Coefficient of determination test: ", decisionTreeRegr.score(self.inputDataTest_X, self.inputDataTest_Y))
+            predictionsTest_model4 = decisionTreeRegr.predict(self.inputDataTest_X)
+            self.plot_model(self.inputDataTest_Y, predictionsTest_model4, "trainData", color_="red")
+
         lr_model3_path = os.path.join(self.figuresPath, "DecisionTree_Train_Test_%s.pdf"%str(maxDepth))
         if os.path.exists(lr_model3_path):
             lr_model3_path = os.path.join(self.figuresPath, "DecisionTree_Train_Test_depth_%s.pdf"%str(maxDepth))
+
+        plt.legend(loc="upper left")
+        plt.savefig(lr_model3_path)
+        plt.show()
+        plt.close()
+
+    def bagging_regressor(self):
+        """
+
+        :return:
+        """
+
+        from sklearn.ensemble import BaggingRegressor
+
+        #predictions_cv = model_selection.cross_val_predict(lm, X, Y, cv = 10)
+        baggingRegr = BaggingRegressor()
+        model4 = baggingRegr.fit(self.inputDataTrain_X, self.inputDataTrain_Y)
+        fig, self.ax = plt.subplots()
+
+        print("Coefficient of determination train: ", baggingRegr.score(self.inputDataTrain_X, self.inputDataTrain_Y))
+        predictionsTrain_model4 = baggingRegr.predict(self.inputDataTrain_X)
+        print("coefficients : ")
+        #print(baggingRegr.get_param())
+        print(type(predictionsTrain_model4))
+
+        x_all = self.inputData.values[:,1:self.nCols]
+        predictionsTrain_model4_all = baggingRegr.predict(x_all)
+        predictOutputCSV_all = os.path.join(self.parentPath, "prediction_output_all.csv")
+        np.savetxt(predictOutputCSV_all, predictionsTrain_model4_all, delimiter=",")
+
+        predictOutputCSV = os.path.join(self.parentPath, "prediction_output.csv")
+        np.savetxt(predictOutputCSV, predictionsTrain_model4, delimiter=",")
+
+        targetOutputCSV = os.path.join(self.parentPath, "target_output.csv")
+        np.savetxt(targetOutputCSV, self.inputDataTrain_Y, delimiter=",")
+
+        self.plot_model(self.inputDataTrain_Y, predictionsTrain_model4, "trainData", color_="blue")
+
+        if self.splitFactor < 1.0:
+            print("Coefficient of determination test: ", baggingRegr.score(self.inputDataTest_X, self.inputDataTest_Y))
+            predictionsTest_model4 = baggingRegr.predict(self.inputDataTest_X)
+            self.plot_model(self.inputDataTest_Y, predictionsTest_model4, "trainData", color_="red")
+
+        lr_model3_path = os.path.join(self.figuresPath, "BaggingRegressor_Train_Test.pdf")
 
         plt.legend(loc="upper left")
         plt.savefig(lr_model3_path)
@@ -186,19 +234,21 @@ class data_analytics(object):
         """
 
         # Linear Regression model
-        self.lr_model1()
+        #self.lr_model1()
 
         # Cross Validation Model
-        self.lr_model2()
+        #self.lr_model2()
 
         # Isotonic Regression Model
         #self.lr_model3()
 
         # decision tree model
-        self.decision_tree_model1(maxDepth=4)
+        #self.decision_tree_model1(maxDepth=4)
 
-        self.decision_tree_model1()
         #self.decision_tree_model1()
+
+        # Bagging Regressor model
+        self.bagging_regressor()
 
     def split_data(self):
         """
@@ -237,14 +287,15 @@ class data_analytics(object):
 
 if __name__ == '__main__':
 
-    if len(sys.argv) == 3:
-        inputCSV = sys.argv[1]
-        splitFact = float(sys.argv[2])
+    # if len(sys.argv) == 3:
+    #     inputCSV = sys.argv[1]
+    #     splitFact = float(sys.argv[2])
+    # else:
+    #     print("Please give input path of the csv file & splitFactor for training dataset (default is 1.0) :")
+    #     exit()
 
-    else:
-        print("Please give input path of the csv file & splitFactor for training dataset (default is 1.0) :")
-        exit()
-
+    inputCSV = r"D:\Umesh\LSPP\1Aug\DataAnalysis\ProjectDA\Regression_Training_DataSet_Secondary_FEA.csv"
+    splitFact = 1.0
     DA = data_analytics(inputCSV, sFactor=splitFact)
     # print("InputData after cleaning : \n",DA.inputData.shape)
     # print("InputData after splitting : \n",DA.inputDataTrain_X.shape)
