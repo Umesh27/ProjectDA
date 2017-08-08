@@ -17,7 +17,7 @@ class data_analytics(object):
         :return:
         """
         self.inputFile = inputFile
-        self.parentPath = os.path.split(self.inputFile)[0]
+        self.parentPath = os.path.split(os.path.split(self.inputFile)[0])[0]
         self.figuresPath = os.path.join(self.parentPath, "Figures")
         self.read_csv()
         self.cleanData()
@@ -183,6 +183,44 @@ class data_analytics(object):
         plt.show()
         plt.close()
 
+    def decision_tree_adaBoosting_model(self, maxDepth=None):
+        """
+
+        :return:
+        """
+
+        from sklearn.tree import DecisionTreeRegressor
+        from sklearn.ensemble import AdaBoostRegressor
+
+        #predictions_cv = model_selection.cross_val_predict(lm, X, Y, cv = 10)
+        decisionTreeRegrAdaBoost = AdaBoostRegressor(DecisionTreeRegressor(max_depth=maxDepth), n_estimators=300)
+        model4 = decisionTreeRegrAdaBoost.fit(self.inputDataTrain_X, self.inputDataTrain_Y)
+        fig, self.ax = plt.subplots()
+
+        print("Coefficient of determination train: ", decisionTreeRegrAdaBoost.score(self.inputDataTrain_X, self.inputDataTrain_Y))
+        predictionsTrain_model4 = decisionTreeRegrAdaBoost.predict(self.inputDataTrain_X)
+        self.plot_model(self.inputDataTrain_Y, predictionsTrain_model4, "trainData", color_="blue")
+        targetOutputCSV_all = os.path.join(self.parentPath, "targetOutput_DTreeAdaBoost.csv")
+        np.savetxt(targetOutputCSV_all, self.inputDataTrain_Y, delimiter=",")
+        predictOutputCSV_all = os.path.join(self.parentPath, "predictedOutput_DTreeAdaBoost.csv")
+        np.savetxt(predictOutputCSV_all, predictionsTrain_model4, delimiter=",")
+
+        if self.splitFactor < 1.0:
+            print("Coefficient of determination test: ", decisionTreeRegrAdaBoost.score(self.inputDataTest_X, self.inputDataTest_Y))
+            predictionsTest_model4 = decisionTreeRegrAdaBoost.predict(self.inputDataTest_X)
+            self.plot_model(self.inputDataTest_Y, predictionsTest_model4, "trainData", color_="red")
+
+        lr_model3_path = os.path.join(self.figuresPath, "decisionTreeRegrAdaBoost_Train_Test_%s.pdf"%str(maxDepth))
+        if os.path.exists(lr_model3_path):
+            lr_model3_path = os.path.join(self.figuresPath, "decisionTreeRegrAdaBoost_Train_Test_depth_%s.pdf"%str(maxDepth))
+
+        plt.legend(loc="upper left")
+        plt.savefig(lr_model3_path)
+        plt.show()
+        plt.close()
+        return decisionTreeRegrAdaBoost
+
+
     def bagging_regressor(self):
         """
 
@@ -192,32 +230,32 @@ class data_analytics(object):
         from sklearn.ensemble import BaggingRegressor
 
         #predictions_cv = model_selection.cross_val_predict(lm, X, Y, cv = 10)
-        baggingRegr = BaggingRegressor()
-        model4 = baggingRegr.fit(self.inputDataTrain_X, self.inputDataTrain_Y)
+        self.baggingRegr = BaggingRegressor()
+        model4 = self.baggingRegr.fit(self.inputDataTrain_X, self.inputDataTrain_Y)
         fig, self.ax = plt.subplots()
 
-        print("Coefficient of determination train: ", baggingRegr.score(self.inputDataTrain_X, self.inputDataTrain_Y))
-        predictionsTrain_model4 = baggingRegr.predict(self.inputDataTrain_X)
+        print("Coefficient of determination train: ", self.baggingRegr.score(self.inputDataTrain_X, self.inputDataTrain_Y))
+        predictionsTrain_model4 = self.baggingRegr.predict(self.inputDataTrain_X)
         print("coefficients : ")
         #print(baggingRegr.get_param())
         print(type(predictionsTrain_model4))
 
         x_all = self.inputData.values[:,1:self.nCols]
-        predictionsTrain_model4_all = baggingRegr.predict(x_all)
-        predictOutputCSV_all = os.path.join(self.parentPath, "prediction_output_all.csv")
+        predictionsTrain_model4_all = self.baggingRegr.predict(x_all)
+        predictOutputCSV_all = os.path.join(self.parentPath, "Output", "prediction_output_all.csv")
         np.savetxt(predictOutputCSV_all, predictionsTrain_model4_all, delimiter=",")
 
-        predictOutputCSV = os.path.join(self.parentPath, "prediction_output.csv")
+        predictOutputCSV = os.path.join(self.parentPath, "Output", "prediction_output.csv")
         np.savetxt(predictOutputCSV, predictionsTrain_model4, delimiter=",")
 
-        targetOutputCSV = os.path.join(self.parentPath, "target_output.csv")
+        targetOutputCSV = os.path.join(self.parentPath, "Output", "target_output.csv")
         np.savetxt(targetOutputCSV, self.inputDataTrain_Y, delimiter=",")
 
         self.plot_model(self.inputDataTrain_Y, predictionsTrain_model4, "trainData", color_="blue")
 
         if self.splitFactor < 1.0:
-            print("Coefficient of determination test: ", baggingRegr.score(self.inputDataTest_X, self.inputDataTest_Y))
-            predictionsTest_model4 = baggingRegr.predict(self.inputDataTest_X)
+            print("Coefficient of determination test: ", self.baggingRegr.score(self.inputDataTest_X, self.inputDataTest_Y))
+            predictionsTest_model4 = self.baggingRegr.predict(self.inputDataTest_X)
             self.plot_model(self.inputDataTest_Y, predictionsTest_model4, "trainData", color_="red")
 
         lr_model3_path = os.path.join(self.figuresPath, "BaggingRegressor_Train_Test.pdf")
@@ -226,6 +264,7 @@ class data_analytics(object):
         plt.savefig(lr_model3_path)
         plt.show()
         plt.close()
+        return self.baggingRegr
 
     def linear_regression_model(self):
         """
@@ -248,7 +287,10 @@ class data_analytics(object):
         #self.decision_tree_model1()
 
         # Bagging Regressor model
-        self.bagging_regressor()
+        self.regressorModel = self.bagging_regressor()
+
+        # decision tree regressor with adaptive boosting algorithm
+        #self.regressorModel = self.decision_tree_adaBoosting_model(4)
 
     def split_data(self):
         """
@@ -294,7 +336,9 @@ if __name__ == '__main__':
     #     print("Please give input path of the csv file & splitFactor for training dataset (default is 1.0) :")
     #     exit()
 
-    inputCSV = r"D:\Umesh\LSPP\1Aug\DataAnalysis\ProjectDA\Regression_Training_DataSet_Secondary_FEA.csv"
+    inputCSV = r"D:\Umesh\LSPP\1Aug\DataAnalysis\ProjectDA\Input\Regression_Training_DataSet_Secondary_FEA.csv"
+    inputCSV = r"D:\Umesh\LSPP\1Aug\DataAnalysis\ProjectDA\Input\Secondary_FEA_52Cases_test1.csv"
+    inputCSV = r"D:\Umesh\LSPP\1Aug\DataAnalysis\ProjectDA\Input\Secondary_FEA_allCases.csv"
     splitFact = 1.0
     DA = data_analytics(inputCSV, sFactor=splitFact)
     # print("InputData after cleaning : \n",DA.inputData.shape)
@@ -304,3 +348,27 @@ if __name__ == '__main__':
     # print("InputData after splitting : \n",DA.inputDataTest_Y.shape)
     # DA.plot_data()
     DA.linear_regression_model()
+    #"""
+    testCSV = os.path.join(DA.parentPath, "Input", "Secondary_FEA_allCases.csv")
+    allData = pd.read_csv(testCSV)
+
+    nCols = allData.shape[1]
+    colNames = allData.columns.tolist()
+    feature_names = colNames[1:nCols-1]
+    target_name = [colNames[nCols-1]]
+    testDataX = pd.DataFrame(allData, columns=feature_names)
+    print(testDataX.shape)
+    testDataY = pd.DataFrame(allData, columns=target_name)
+    print(testDataY.shape)
+    predictTestDataY = DA.regressorModel.predict(testDataX)
+    print("Coefficient of determination train: ", DA.regressorModel.score(testDataX, testDataY))
+    plt.scatter(testDataY, predictTestDataY)
+    plt.show()
+    #predictOutputCSV_allData = os.path.join(DA.parentPath, "Output", "prediction_output_allData_adaBoost.csv")
+    predictOutputCSV_allData = os.path.join(DA.parentPath, "Output", "prediction_output_allData_baggingRegr.csv")
+    if os.path.exists(predictOutputCSV_allData):
+        tempPathList = predictOutputCSV_allData.split(".")
+        print(tempPathList)
+        predictOutputCSV_allData = "".join([tempPathList[0], "_n.", tempPathList[-1]])
+    np.savetxt(predictOutputCSV_allData, predictTestDataY, delimiter=",")
+    #"""
