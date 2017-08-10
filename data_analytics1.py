@@ -44,7 +44,7 @@ class data_analytics(object):
         #print(self.inputData)
         self.getNullInd()
         self.inputData = self.inputData.drop(self.indices)
-        #print(self.inputData.head())
+        print(self.inputData.head())
         # for row in self.inputData:
         #     print(row)
         return self.inputData
@@ -379,7 +379,34 @@ class data_analytics(object):
         #self.regressorModel = self.decision_tree_adaBoosting_model()
         #self.regressorModel = self.decision_tree_adaBoosting_model2()
 
+        # Statsmodels linear regression
         self.regressorModel = self.statsModel_lr()
+
+        # sklearn SVM
+
+        #self.regressorModel = self.svm_model()
+
+    def svm_model(self):
+        """
+
+        :return:
+        """
+        from sklearn import svm
+
+        self.modelName = "svc_linear"
+        svc = svm.SVC(C=1, kernel='linear')
+        print(self.inputDataTrain_X.head())
+        print(self.inputDataTrain_Y.head())
+        model = svc.fit(self.inputDataTrain_X, self.inputDataTrain_Y)
+        print(model.score(self.inputDataTrain_X, self.inputDataTrain_Y))
+        predicted_TrainY = model.predict(self.inputDataTrain_X)
+        plt.scatter(predicted_TrainY, self.inputDataTrain_Y)
+        plt.xlabel("predictedY")
+        plt.ylabel("targetY")
+        plt.show()
+
+        return predicted_TrainY
+
 
     def statsModel_lr(self):
         """
@@ -387,6 +414,8 @@ class data_analytics(object):
         :return:
         """
         from statsmodels.formula.api import ols
+
+        self.modelName = "stats_ols"
 
         self.inputDataTrain = pd.concat([self.inputDataTrain_X, self.inputDataTrain_Y], axis=1)
         self.inputDataTest = pd.concat([self.inputDataTest_X, self.inputDataTest_Y], axis=1)
@@ -411,7 +440,6 @@ class data_analytics(object):
 
         plt.show()
         return lm_new
-
 
     def split_data(self):
         """
@@ -470,7 +498,7 @@ class data_analytics(object):
         plt.show()
         #predictOutputCSV_allData = os.path.join(DA.parentPath, "Output", "prediction_output_allData_adaBoost.csv")
 
-        predictOutputCSV_allData = os.path.join(self.outputPath, "prediction_test3.csv")
+        predictOutputCSV_allData = os.path.join(self.outputPath, "physicalDataPrediction_%s.csv"%self.modelName)
 
         if os.path.exists(predictOutputCSV_allData):
             tempPathList = predictOutputCSV_allData.split(".")
@@ -491,7 +519,10 @@ if __name__ == '__main__':
     inputCSV = r"D:\Umesh\LSPP\1Aug\DataAnalysis\ProjectDA\Input\Regression_Training_DataSet_Secondary_FEA.csv"
     inputCSV = r"D:\Umesh\LSPP\1Aug\DataAnalysis\ProjectDA\Input\Secondary_FEA_52Cases_test1.csv"
 
-    """ Dataset should consist of first column as sequence & last column as Topload( Target Variable) as this two columns will be removed from the dataset for training the model
+    """
+     README
+
+     Dataset should consist of first column as sequence & last column as Topload( Target Variable) as this two columns will be removed from the dataset for training the model
         the remaining columns will be considered as features.
 
         Ex.
@@ -512,6 +543,6 @@ if __name__ == '__main__':
     DA = data_analytics(inputCSV, sFactor=splitFact)
     DA.linear_regression_model()
     #"""
-    testCSVPath = os.path.join(DA.parentPath, "Input", "test2.csv")
+    testCSVPath = os.path.join(DA.parentPath, "Input", "physical_test_input.csv")
     DA.testModel(testCSVPath)
     #"""
