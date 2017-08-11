@@ -44,7 +44,8 @@ class data_analytics(object):
         #print(self.inputData)
         self.getNullInd()
         self.inputData = self.inputData.drop(self.indices)
-        print(self.inputData.head())
+        print(self.inputData.shape)
+        #print(self.inputData.head())
         # for row in self.inputData:
         #     print(row)
         return self.inputData
@@ -78,10 +79,10 @@ class data_analytics(object):
 
     def lr_model1(self):
         """
-
+                Here small variation in the parameters will have huge impact on the prediction values
         :return:
         """
-
+        self.modelName = "sklearn_LR"
         lm = linear_model.LinearRegression()
         model = lm.fit(self.inputDataTrain_X, self.inputDataTrain_Y)
         print(self.inputDataTrain_X.shape, self.inputDataTrain_Y.shape)
@@ -164,6 +165,47 @@ class data_analytics(object):
         plt.close()
         return ir
 
+    def lr_model4(self):
+        """
+
+        :return:
+        """
+        self.modelName = "sklearn_RidgeRegr"
+        lm = linear_model.Ridge(alpha = 0.5)
+        model = lm.fit(self.inputDataTrain_X, self.inputDataTrain_Y)
+        print(self.inputDataTrain_X.shape, self.inputDataTrain_Y.shape)
+        # print("intercept for train model : ", lm.intercept_)
+        # print("coefficients for train model : ")
+        # for i in range(lm.coef_.shape[0]):
+        #     for j in range(lm.coef_.shape[1]):
+        #         print(float(lm.coef_[i][j]))
+
+        fig, self.ax = plt.subplots()
+
+        predictionsTrain_model1 = lm.predict(self.inputDataTrain_X)
+        print(predictionsTrain_model1.shape, self.inputDataTrain_Y.shape)
+
+        print("Coefficient of determination train: ", lm.score(self.inputDataTrain_X, self.inputDataTrain_Y))
+        self.plot_model(self.inputDataTrain_Y, predictionsTrain_model1, "trainData", color_="blue")
+
+        Y_prediction2 = lm.predict(self.independent)
+        predictOutputCSV_allData = os.path.join(self.outputPath, "trainData_%s.csv"%self.modelName)
+        np.savetxt(predictOutputCSV_allData, Y_prediction2, delimiter=",")
+
+        if self.splitFactor < 1.0:
+            print("Coefficient of determination test: ", lm.score(self.inputDataTest_X, self.inputDataTest_Y))
+            predictionsTest_model1 = lm.predict(self.inputDataTest_X)
+            print(predictionsTest_model1.shape, self.inputDataTest_Y.shape)
+            self.plot_model(self.inputDataTest_Y, predictionsTest_model1, "testData", color_="red")
+
+        lr_model1_path = os.path.join(self.figuresPath, "score_Vs_actual_%s.pdf"%self.modelName)
+        plt.legend(loc="upper left")
+        plt.savefig(lr_model1_path)
+        plt.show()
+        plt.close()
+
+        return lm
+
     def decision_tree_model1(self, maxDepth=None):
         """
 
@@ -171,7 +213,7 @@ class data_analytics(object):
         """
 
         from sklearn.tree import DecisionTreeRegressor
-
+        self.modelName = "DTRegressor"
         #predictions_cv = model_selection.cross_val_predict(lm, X, Y, cv = 10)
         decisionTreeRegr = DecisionTreeRegressor(max_depth=maxDepth)
         model4 = decisionTreeRegr.fit(self.inputDataTrain_X, self.inputDataTrain_Y)
@@ -180,6 +222,10 @@ class data_analytics(object):
         print("Coefficient of determination train: ", decisionTreeRegr.score(self.inputDataTrain_X, self.inputDataTrain_Y))
         predictionsTrain_model4 = decisionTreeRegr.predict(self.inputDataTrain_X)
         self.plot_model(self.inputDataTrain_Y, predictionsTrain_model4, "trainData", color_="blue")
+
+        Y_prediction2 = decisionTreeRegr.predict(self.independent)
+        predictOutputCSV_allData = os.path.join(self.outputPath, "trainData_%s.csv"%self.modelName)
+        np.savetxt(predictOutputCSV_allData, Y_prediction2, delimiter=",")
 
         if self.splitFactor < 1.0:
             print("Coefficient of determination test: ", decisionTreeRegr.score(self.inputDataTest_X, self.inputDataTest_Y))
@@ -197,7 +243,7 @@ class data_analytics(object):
 
         return decisionTreeRegr
 
-    def decision_tree_adaBoosting_model(self, maxDepth=None):
+    def adaBoosting_DTregressor(self, maxDepth=None):
         """
 
         :return:
@@ -206,6 +252,7 @@ class data_analytics(object):
         from sklearn.tree import DecisionTreeRegressor
         from sklearn.ensemble import AdaBoostRegressor
 
+        self.modelName = "adaBoostDT"
         #predictions_cv = model_selection.cross_val_predict(lm, X, Y, cv = 10)
         decisionTreeRegrAdaBoost = AdaBoostRegressor(DecisionTreeRegressor(max_depth=maxDepth), n_estimators=300)
         model4 = decisionTreeRegrAdaBoost.fit(self.inputDataTrain_X, self.inputDataTrain_Y)
@@ -214,56 +261,19 @@ class data_analytics(object):
         print("Coefficient of determination train: ", decisionTreeRegrAdaBoost.score(self.inputDataTrain_X, self.inputDataTrain_Y))
         predictionsTrain_model4 = decisionTreeRegrAdaBoost.predict(self.inputDataTrain_X)
         self.plot_model(self.inputDataTrain_Y, predictionsTrain_model4, "trainData", color_="blue")
-        # targetOutputCSV_all = os.path.join(self.parentPath, "targetOutput_DTreeAdaBoost.csv")
-        # np.savetxt(targetOutputCSV_all, self.inputDataTrain_Y, delimiter=",")
-        # predictOutputCSV_all = os.path.join(self.parentPath, "predictedOutput_DTreeAdaBoost.csv")
-        # np.savetxt(predictOutputCSV_all, predictionsTrain_model4, delimiter=",")
+
+        Y_prediction2 = decisionTreeRegrAdaBoost.predict(self.independent)
+        predictOutputCSV_allData = os.path.join(self.outputPath, "trainData_%s_300_%s.csv"%(self.modelName, maxDepth))
+        np.savetxt(predictOutputCSV_allData, Y_prediction2, delimiter=",")
 
         if self.splitFactor < 1.0:
             print("Coefficient of determination test: ", decisionTreeRegrAdaBoost.score(self.inputDataTest_X, self.inputDataTest_Y))
             predictionsTest_model4 = decisionTreeRegrAdaBoost.predict(self.inputDataTest_X)
             self.plot_model(self.inputDataTest_Y, predictionsTest_model4, "trainData", color_="red")
 
-        lr_model3_path = os.path.join(self.figuresPath, "decisionTreeRegrAdaBoost_Train_Test_%s3.pdf"%str(maxDepth))
+        lr_model3_path = os.path.join(self.figuresPath, "%s_Train_Test_%s_300.pdf"%(self.modelName, str(maxDepth)))
         if os.path.exists(lr_model3_path):
-            lr_model3_path = os.path.join(self.figuresPath, "decisionTreeRegrAdaBoost_Train_Test_depth_%s3.pdf"%str(maxDepth))
-
-        plt.legend(loc="upper left")
-        plt.savefig(lr_model3_path)
-        plt.show()
-        plt.close()
-        return decisionTreeRegrAdaBoost
-
-    def decision_tree_adaBoosting_model2(self, maxDepth=None):
-        """
-
-        :return:
-        """
-
-        from sklearn.tree import DecisionTreeRegressor
-        from sklearn.ensemble import AdaBoostRegressor
-
-        #predictions_cv = model_selection.cross_val_predict(lm, X, Y, cv = 10)
-        decisionTreeRegrAdaBoost = AdaBoostRegressor(linear_model.LinearRegression(), n_estimators=300)
-        model4 = decisionTreeRegrAdaBoost.fit(self.inputDataTrain_X, self.inputDataTrain_Y)
-        fig, self.ax = plt.subplots()
-
-        print("Coefficient of determination train: ", decisionTreeRegrAdaBoost.score(self.inputDataTrain_X, self.inputDataTrain_Y))
-        predictionsTrain_model4 = decisionTreeRegrAdaBoost.predict(self.inputDataTrain_X)
-        self.plot_model(self.inputDataTrain_Y, predictionsTrain_model4, "trainData", color_="blue")
-        # targetOutputCSV_all = os.path.join(self.parentPath, "targetOutput_DTreeAdaBoost.csv")
-        # np.savetxt(targetOutputCSV_all, self.inputDataTrain_Y, delimiter=",")
-        # predictOutputCSV_all = os.path.join(self.parentPath, "predictedOutput_DTreeAdaBoost.csv")
-        # np.savetxt(predictOutputCSV_all, predictionsTrain_model4, delimiter=",")
-
-        if self.splitFactor < 1.0:
-            print("Coefficient of determination test: ", decisionTreeRegrAdaBoost.score(self.inputDataTest_X, self.inputDataTest_Y))
-            predictionsTest_model4 = decisionTreeRegrAdaBoost.predict(self.inputDataTest_X)
-            self.plot_model(self.inputDataTest_Y, predictionsTest_model4, "trainData", color_="red")
-
-        lr_model3_path = os.path.join(self.figuresPath, "decisionTreeRegrAdaBoost_Train_Test_%s3.pdf"%str(maxDepth))
-        if os.path.exists(lr_model3_path):
-            lr_model3_path = os.path.join(self.figuresPath, "decisionTreeRegrAdaBoost_Train_Test_depth_%s3.pdf"%str(maxDepth))
+            lr_model3_path = os.path.join(self.figuresPath, "%s_Train_Test_depth_%s.pdf"%(self.modelName, str(maxDepth)))
 
         plt.legend(loc="upper left")
         plt.savefig(lr_model3_path)
@@ -279,44 +289,37 @@ class data_analytics(object):
 
         from sklearn.ensemble import BaggingRegressor
 
+        self.modelName = "baggingRegr"
         #predictions_cv = model_selection.cross_val_predict(lm, X, Y, cv = 10)
-        self.baggingRegr = BaggingRegressor()
-        model4 = self.baggingRegr.fit(self.inputDataTrain_X, self.inputDataTrain_Y)
+        baggingRegr = BaggingRegressor()
+        model4 = baggingRegr.fit(self.inputDataTrain_X, self.inputDataTrain_Y)
         fig, self.ax = plt.subplots()
 
-        print("Coefficient of determination train: ", self.baggingRegr.score(self.inputDataTrain_X, self.inputDataTrain_Y))
-        predictionsTrain_model4 = self.baggingRegr.predict(self.inputDataTrain_X)
+        print("Coefficient of determination train: ", baggingRegr.score(self.inputDataTrain_X, self.inputDataTrain_Y))
+        predictionsTrain_model4 = baggingRegr.predict(self.inputDataTrain_X)
         print("coefficients : ")
         #print(baggingRegr.get_param())
         print(type(predictionsTrain_model4))
-
-        x_all = self.inputData.values[:,1:self.nCols]
-        predictionsTrain_model4_all = self.baggingRegr.predict(x_all)
-        # predictOutputCSV_all = os.path.join(self.parentPath, "Output", "prediction_output_all.csv")
-        # np.savetxt(predictOutputCSV_all, predictionsTrain_model4_all, delimiter=",")
-        #
-        # predictOutputCSV = os.path.join(self.parentPath, "Output", "prediction_output.csv")
-        # np.savetxt(predictOutputCSV, predictionsTrain_model4, delimiter=",")
-        #
-        # targetOutputCSV = os.path.join(self.parentPath, "Output", "target_output.csv")
-        # np.savetxt(targetOutputCSV, self.inputDataTrain_Y, delimiter=",")
-
         self.plot_model(self.inputDataTrain_Y, predictionsTrain_model4, "trainData", color_="blue")
 
         if self.splitFactor < 1.0:
-            print("Coefficient of determination test: ", self.baggingRegr.score(self.inputDataTest_X, self.inputDataTest_Y))
-            predictionsTest_model4 = self.baggingRegr.predict(self.inputDataTest_X)
+            print("Coefficient of determination test: ", baggingRegr.score(self.inputDataTest_X, self.inputDataTest_Y))
+            predictionsTest_model4 = baggingRegr.predict(self.inputDataTest_X)
             self.plot_model(self.inputDataTest_Y, predictionsTest_model4, "trainData", color_="red")
 
-        lr_model3_path = os.path.join(self.figuresPath, "FEA_All_Features_BaggingRegressor.pdf")
-
+        lr_model3_path = os.path.join(self.figuresPath, "FEA_All_Features_%s.pdf"%self.modelName)
         plt.legend(loc="upper left")
         plt.savefig(lr_model3_path)
         plt.show()
         plt.close()
-        return self.baggingRegr
 
-    def bagging_regressor2(self):
+        predictionsTrain_model = baggingRegr.predict(self.independent)
+        predictOutputCSV_allData = os.path.join(self.outputPath, "trainDataPrediction_%s.csv"%self.modelName)
+        np.savetxt(predictOutputCSV_allData, predictionsTrain_model, delimiter=",")
+
+        return baggingRegr
+
+    def bagging_DTRegressor(self):
         """
 
         :return:
@@ -324,13 +327,15 @@ class data_analytics(object):
 
         from sklearn.ensemble import BaggingRegressor
 
+        self.modelName = "baggingDTRegr"
+
         #predictions_cv = model_selection.cross_val_predict(lm, X, Y, cv = 10)
-        self.baggingRegr = BaggingRegressor(base_estimator=DecisionTreeRegressor())#, n_estimators=50, bootstrap=True, oob_score=True)
-        model4 = self.baggingRegr.fit(self.inputDataTrain_X, self.inputDataTrain_Y)
+        baggingDTRegr = BaggingRegressor(base_estimator=DecisionTreeRegressor())#, n_estimators=50, bootstrap=True, oob_score=True)
+        model4 = baggingDTRegr.fit(self.inputDataTrain_X, self.inputDataTrain_Y)
         fig, self.ax = plt.subplots()
 
-        print("Coefficient of determination train: ", self.baggingRegr.score(self.inputDataTrain_X, self.inputDataTrain_Y))
-        predictionsTrain_model4 = self.baggingRegr.predict(self.inputDataTrain_X)
+        print("Coefficient of determination train: ", baggingDTRegr.score(self.inputDataTrain_X, self.inputDataTrain_Y))
+        predictionsTrain_model4 = baggingDTRegr.predict(self.inputDataTrain_X)
         print("coefficients : ")
         #print(baggingRegr.get_param())
         print(type(predictionsTrain_model4))
@@ -339,52 +344,58 @@ class data_analytics(object):
         self.plot_model(self.inputDataTrain_Y, predictionsTrain_model4, "trainData", color_="blue")
 
         if self.splitFactor < 1.0:
-            print("Coefficient of determination test: ", self.baggingRegr.score(self.inputDataTest_X, self.inputDataTest_Y))
-            predictionsTest_model4 = self.baggingRegr.predict(self.inputDataTest_X)
+            print("Coefficient of determination test: ", baggingDTRegr.score(self.inputDataTest_X, self.inputDataTest_Y))
+            predictionsTest_model4 = baggingDTRegr.predict(self.inputDataTest_X)
             self.plot_model(self.inputDataTest_Y, predictionsTest_model4, "trainData", color_="red")
 
-        lr_model3_path = os.path.join(self.figuresPath, "FEA_All_Features_BaggingRegressor2.pdf")
+        lr_model3_path = os.path.join(self.figuresPath, "FEA_All_Features_%s.pdf"%self.modelName)
+        predictionsTrain_model = baggingDTRegr.predict(self.independent)
+        predictOutputCSV_allData = os.path.join(self.outputPath, "trainDataPrediction_%s.csv"%self.modelName)
+        np.savetxt(predictOutputCSV_allData, predictionsTrain_model, delimiter=",")
+        plt.legend(loc="upper left")
+        plt.savefig(lr_model3_path)
+        plt.show()
+        plt.close()
+        return baggingDTRegr
+
+    def bagging_RidgeRegressor(self):
+        """
+
+        :return:
+        """
+
+        from sklearn.ensemble import BaggingRegressor
+
+        self.modelName = "baggingRidgeRegr3000"
+        #predictions_cv = model_selection.cross_val_predict(lm, X, Y, cv = 10)
+        baggingRidgeRegr = BaggingRegressor(base_estimator=linear_model.Ridge(alpha = 0.5), n_estimators=3000)#, n_estimators=50, bootstrap=True, oob_score=True)
+        model4 = baggingRidgeRegr.fit(self.inputDataTrain_X, self.inputDataTrain_Y)
+        fig, self.ax = plt.subplots()
+
+        print("Coefficient of determination train: ", baggingRidgeRegr.score(self.inputDataTrain_X, self.inputDataTrain_Y))
+        predictionsTrain_model4 = baggingRidgeRegr.predict(self.inputDataTrain_X)
+        #print("coefficients : ")
+        #print(baggingRegr.get_param())
+        #print(type(predictionsTrain_model4))
+
+        x_all = self.inputData.values[:,1:self.nCols]
+        self.plot_model(self.inputDataTrain_Y, predictionsTrain_model4, "trainData", color_="blue")
+
+        if self.splitFactor < 1.0:
+            print("Coefficient of determination test: ", baggingRidgeRegr.score(self.inputDataTest_X, self.inputDataTest_Y))
+            predictionsTest_model4 = baggingRidgeRegr.predict(self.inputDataTest_X)
+            self.plot_model(self.inputDataTest_Y, predictionsTest_model4, "trainData", color_="red")
+
+        lr_model3_path = os.path.join(self.figuresPath, "Scores_Vs_targets_%s.pdf"%self.modelName)
+        predictionsTrain_model = baggingRidgeRegr.predict(self.independent)
+        predictOutputCSV_allData = os.path.join(self.outputPath, "trainDataPrediction_%s.csv"%self.modelName)
+        np.savetxt(predictOutputCSV_allData, predictionsTrain_model, delimiter=",")
 
         plt.legend(loc="upper left")
         plt.savefig(lr_model3_path)
         plt.show()
         plt.close()
-        return self.baggingRegr
-
-    def linear_regression_model(self):
-        """
-            method used for creating regression model with considering the input data
-        :return:
-        """
-
-        # Linear Regression model
-        #self.regressorModel = self.lr_model1()
-
-        # Cross Validation Model
-        #self.lr_model2()
-
-        # Isotonic Regression Model
-        #self.lr_model3()
-
-        # decision tree model
-        #self.decision_tree_model1(maxDepth=4)
-
-        #self.decision_tree_model1()
-
-        # Bagging Regressor model
-        #self.regressorModel = self.bagging_regressor()
-        #self.regressorModel = self.bagging_regressor2()
-
-        # decision tree regressor with adaptive boosting algorithm
-        #self.regressorModel = self.decision_tree_adaBoosting_model()
-        #self.regressorModel = self.decision_tree_adaBoosting_model2()
-
-        # Statsmodels linear regression
-        self.regressorModel = self.statsModel_lr()
-
-        # sklearn SVM
-
-        #self.regressorModel = self.svm_model()
+        return baggingRidgeRegr
 
     def svm_model(self):
         """
@@ -441,6 +452,84 @@ class data_analytics(object):
         plt.show()
         return lm_new
 
+    def statsmodels_sm(self):
+        """
+
+        :return:
+        """
+        import statsmodels.api as sm
+
+        self.modelName = "sm_OLS"
+
+        #X = sm.add_constant(self.inputDataTrain_X)
+        X = self.inputDataTrain_X
+        print(X.shape)#, X.columns)
+        OLS_Model = sm.OLS(self.inputDataTrain_Y, X).fit()
+
+        #print(OLS_Model.summary())
+
+        Y_prediction = OLS_Model.predict(X)
+        Y_prediction2 = OLS_Model.predict(self.independent)
+        float_formatter = lambda x: "%.2f" % x
+        np.set_printoptions(formatter={'float_kind':float_formatter})
+        print(self.independent.values[0], Y_prediction2[0])
+        predictOutputCSV_allData = os.path.join(self.outputPath, "trainData_%s.csv"%self.modelName)
+        np.savetxt(predictOutputCSV_allData, Y_prediction2, delimiter=",")
+
+
+        plt.scatter(Y_prediction, self.inputDataTrain_Y)
+        plt.show()
+
+        return OLS_Model
+
+    def linear_regression_model(self):
+        """
+            method used for creating regression model with considering the input data
+        :return:
+        """
+
+        # 1 Statsmodels linear regression
+        #self.regressorModel = self.statsmodels_sm()
+
+        # 2 Ridge Regression model
+        #self.regressorModel = self.lr_model4()
+
+        # 3 decision tree model
+        #self.regressorModel = self.decision_tree_model1(maxDepth=16)
+
+        # 4 Bagging Regressor model with Ridge Regressor
+        #self.regressorModel = self.bagging_RidgeRegressor()
+
+        # 5 Bagging Regressor model with Decision Tree
+        #self.regressorModel = self.bagging_DTRegressor()
+
+        # 6 Bagging Regressor model
+        #self.regressorModel = self.bagging_regressor()
+
+        # 7 decision tree regressor with adaptive boosting algorithm
+        self.regressorModel = self.adaBoosting_DTregressor(16)
+
+        # Linear Regression model
+        #self.regressorModel = self.lr_model1()
+
+        # Cross Validation Model
+        #self.lr_model2()
+
+        # Isotonic Regression Model
+        #self.lr_model3()
+
+        #self.decision_tree_model1()
+
+
+        #self.regressorModel = self.decision_tree_adaBoosting_model2()
+
+        # Statsmodels linear regression
+        #self.regressorModel = self.statsModel_lr()
+
+        # sklearn SVM
+
+        #self.regressorModel = self.svm_model()
+
     def split_data(self):
         """
             Method use to split data as per requirement in training & testing dataset
@@ -451,7 +540,7 @@ class data_analytics(object):
         # self.inputDataArray = self.inputData.values
         # self.independent = self.inputDataArray[:, 0:(self.nCols-1)]
         self.colNames = self.inputData.columns.tolist()
-        self.feature_names = self.colNames[1:self.nCols-1]
+        self.feature_names = self.colNames[0:self.nCols-1]
         self.target_name = [self.colNames[self.nCols-1]]
         self.independent = pd.DataFrame(self.inputData, columns=self.feature_names)
         #print("Independent dataset : \n")
@@ -482,18 +571,24 @@ class data_analytics(object):
         :return:
         """
         allData = pd.read_csv(testCSV)
-
         nCols = allData.shape[1]
         colNames = allData.columns.tolist()
-        feature_names = colNames[1:nCols-1]
+        feature_names = colNames[0:nCols-1]
         target_name = [colNames[nCols-1]]
         testDataX = pd.DataFrame(allData, columns=feature_names)
         #print(testDataX)
-        print(testDataX.shape)
+        print(testDataX.shape)#, testDataX.columns)
         testDataY = pd.DataFrame(allData, columns=target_name)
         print(testDataY.shape)
         predictTestDataY = self.regressorModel.predict(testDataX)
-        #print("Coefficient of determination train: ", self.regressorModel.score(testDataX, testDataY))
+        #print(type(predictTestDataY))
+        float_formatter = lambda x: "%.2f" % x
+        np.set_printoptions(formatter={'float_kind':float_formatter})
+        #print(testDataY, predictTestDataY)
+        try:
+            print("Coefficient of determination train: ", self.regressorModel.score(testDataX, testDataY))
+        except Exception as ex:
+            print(ex)
         plt.scatter(testDataY, predictTestDataY)
         plt.show()
         #predictOutputCSV_allData = os.path.join(DA.parentPath, "Output", "prediction_output_allData_adaBoost.csv")
@@ -538,11 +633,16 @@ if __name__ == '__main__':
                         'Prim_Cal','Prim_E1','Prim_E2','Headspace','Sec_Flap','Sec_Caliper','Sec_E1','Sec_E2']
             Target Variable = ["TopLoad"]
      """
+    inputCSV = r"D:\Umesh\LSPP\1Aug\DataAnalysis\ProjectDA\Input\test1.csv"
+    inputCSV = r"D:\Umesh\LSPP\1Aug\DataAnalysis\ProjectDA\Input\FEA_2x5_Features.csv"
     inputCSV = r"D:\Umesh\LSPP\1Aug\DataAnalysis\ProjectDA\Input\FEA_All_Features.csv"
-    splitFact = 0.20#1.0 #
+    inputCSV = r"D:\Umesh\LSPP\1Aug\DataAnalysis\ProjectDA\Input\FEA_All_Features_new.csv"
+    splitFact = 1.0 #0.20#
     DA = data_analytics(inputCSV, sFactor=splitFact)
     DA.linear_regression_model()
     #"""
+    testCSVPath = os.path.join(DA.parentPath, "Input", "test1_physical.csv")
     testCSVPath = os.path.join(DA.parentPath, "Input", "physical_test_input.csv")
+    testCSVPath = os.path.join(DA.parentPath, "Input", "physical_test_input_new.csv")
     DA.testModel(testCSVPath)
     #"""
